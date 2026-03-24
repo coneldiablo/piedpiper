@@ -1,40 +1,40 @@
-# NIR Non-ML Alignment Summary
+# Сводка соответствия НИР по non-ML части
 
-This document records the non-ML features that are now directly backed by code, API payloads, GUI elements, and tests.
+Этот документ фиксирует non-ML возможности, которые теперь напрямую подтверждены кодом, payload API, элементами GUI и тестами.
 
-## Implemented and Surfaced
+## Реализовано и выведено наружу
 
-- Unified non-ML analysis pipeline in `services/analysis_pipeline.py`
-- Windows-first dynamic analysis with explicit degraded mode
-- Expanded Frida hook catalog (`50+` APIs declared)
-- Differential runtime snapshots for processes, filesystem, and registry
-- OOXML inspection for:
+- единый non-ML пайплайн анализа в `services/analysis_pipeline.py`
+- Windows-first динамический анализ с явным degraded mode
+- расширенный каталог хуков Frida (`50+` объявленных API)
+- дифференциальные runtime-снимки процессов, файловой системы и реестра
+- инспекция OOXML для:
   - `docx` / `docm`
   - `vbaProject.bin`
   - embedded objects
-  - external and suspicious relationships
-  - auto-open indicators
-- YARA engine status propagation to:
-  - static results
+  - внешних и подозрительных relationships
+  - признаков auto-open
+- распространение статуса движка YARA в:
+  - статические результаты
   - GUI
   - API
-  - generated reports
-- AITUNNEL provider adapter with env-only secrets
-- External retro-hunt orchestration for SIEM, EDR, and sandbox connectors
-- MITRE to D3FEND mapping included in result payloads and GUI
-- Unified report generation with PDF, HTML, and JSON outputs
-- Swagger/OpenAPI exposure for the REST surface
+  - сгенерированные отчёты
+- provider adapter для AITUNNEL с секретами только через env
+- оркестрация внешнего ретроханта для SIEM, EDR и sandbox-коннекторов
+- сопоставление MITRE -> D3FEND, включённое в payload результатов и GUI
+- единая генерация отчётов в PDF, HTML и JSON
+- Swagger/OpenAPI для REST-поверхности
 
-## Explicitly Out of Scope for This Alignment Pass
+## Явно вне рамок этого этапа выравнивания
 
-- ML training code
-- ML metrics
-- dataset changes
-- ML-related scientific claims
+- код обучения ML
+- ML-метрики
+- изменения датасетов
+- научные утверждения, относящиеся к ML
 
-## Verification Targets
+## Цели проверки
 
 - `pytest`
 - `main.py gui --diagnose`
-- API/OpenAPI smoke checks
-- compile/import hygiene for project files outside virtual environments
+- smoke-check API/OpenAPI
+- compile/import hygiene для файлов проекта вне виртуальных окружений

@@ -1,41 +1,41 @@
-# Pied Piper Architecture
+# Архитектура Pied Piper
 
-## 1. Runtime Model
+## 1. Runtime-модель
 
-Pied Piper uses one canonical non-ML analysis pipeline shared by the API and the desktop GUI:
+Pied Piper использует один канонический non-ML пайплайн анализа, общий для API и desktop GUI:
 
 ```text
 static -> dynamic -> IoC -> behavioral -> MITRE -> D3FEND -> threat intel -> retro-hunt -> report
 ```
 
-Primary orchestrator:
+Главный оркестратор:
 
 - `services/analysis_pipeline.py`
 
-This avoids divergence between standalone modules, GUI actions, and REST behavior.
+Это устраняет расхождения между отдельными модулями, действиями GUI и поведением REST API.
 
-## 2. Static Layer
+## 2. Статический слой
 
-Entry point:
+Точка входа:
 
 - `analyzer/static_analysis.py`
 
-Responsibilities:
+Задачи:
 
-- file hashing
-- signature-based type detection
-- PE/ELF/PDF/script inspection
-- OOXML inspection for:
-  - `docx` vs `docm`
+- хеширование файлов
+- сигнатурное определение типа
+- анализ PE/ELF/PDF/скриптов
+- инспекция OOXML на предмет:
+  - различения `docx` и `docm`
   - `vbaProject.bin`
-  - embedded OLE objects
-  - external and suspicious relationships
-  - template/auto-open indicators
-- OLE/VBA parsing for legacy Office formats
-- YARA loading, match execution, and degraded-state reporting
-- string extraction and heuristic enrichment
+  - embedded OLE-объектов
+  - внешних и подозрительных relationships
+  - шаблонов и автооткрытия
+- разбор OLE/VBA для legacy-форматов Office
+- загрузка YARA, выполнение совпадений и репортинг degraded state
+- извлечение строк и эвристическое обогащение
 
-Static result contract includes:
+Контракт результата статического анализа включает:
 
 - `hashes`
 - `file_type`
@@ -44,26 +44,26 @@ Static result contract includes:
 - `yara_status`
 - `enhanced_checks`
 
-## 3. Dynamic Layer
+## 3. Динамический слой
 
-Entry point:
+Точка входа:
 
 - `analyzer/dynamic_analysis.py`
 
-Responsibilities:
+Задачи:
 
-- Frida-based API interception
-- expanded Windows hook catalog (`50+` entries)
-- process timeline construction
-- file, registry, and network activity views
-- Windows differential snapshots:
-  - process inventory
-  - filesystem state
-  - registry state
-- explicit runtime capability reporting
-- degraded mode when Frida is unavailable
+- перехват API на базе Frida
+- расширенный Windows-каталог хуков (`50+` позиций)
+- построение таймлайна процесса
+- представление файловой, реестровой и сетевой активности
+- дифференциальные снимки Windows:
+  - список процессов
+  - состояние файловой системы
+  - состояние реестра
+- явный репортинг runtime-возможностей
+- degraded mode при недоступности Frida
 
-Dynamic result contract includes:
+Контракт результата динамического анализа включает:
 
 - `api_calls`
 - `behavioral_patterns`
@@ -77,13 +77,13 @@ Dynamic result contract includes:
 - `system_snapshots`
 - `errors`
 
-## 4. Enrichment Layer
+## 4. Слой обогащения
 
-### IoC Extraction
+### Извлечение IoC
 
 - `analyzer/ioc_extractor.py`
 
-### Behavioral Profiling
+### Поведенческое профилирование
 
 - `analyzer/behavioral_analysis.py`
 
@@ -95,111 +95,111 @@ Dynamic result contract includes:
 
 - `services/intel_fusion.py`
 
-MITRE techniques are mapped into defensive controls and surfaced in both the machine-readable payload and the GUI.
+Техники MITRE преобразуются в защитные меры и отображаются как в machine-readable payload, так и в GUI.
 
 ## 5. Threat Intelligence
 
-Entry point:
+Точка входа:
 
 - `core/threat_intel.py`
 
-Used by:
+Используется из:
 
 - `services/analysis_pipeline.py`
 
-Behavior:
+Поведение:
 
-- enriches supported IoC types
-- tracks provider availability
-- degrades cleanly when keys or external services are unavailable
+- обогащает поддерживаемые типы IoC
+- отслеживает доступность провайдеров
+- корректно деградирует при отсутствии ключей или недоступности внешних сервисов
 
-Result contract:
+Контракт результата:
 
 - `status`
 - `lookups`
 - `summary`
 - `service_status`
 
-## 6. External Retro-Hunt
+## 6. Внешний Retro-Hunt
 
-Entry point:
+Точка входа:
 
 - `services/retro_hunt.py`
 
-Supported connector roles:
+Поддерживаемые роли коннекторов:
 
 - SIEM
 - EDR
 - sandbox
 
-Behavior:
+Поведение:
 
-- concurrent connector execution
-- timeout-aware requests
-- partial error isolation
-- aggregated `confidence_boost`
+- параллельный запуск коннекторов
+- учёт таймаутов
+- изоляция частичных ошибок
+- агрегированный `confidence_boost`
 
-Exposed through:
+Доступен через:
 
-- canonical pipeline
+- канонический пайплайн
 - `POST /api/retro-hunt`
-- GUI fusion/retrohunt tab
+- вкладку fusion/ретроханта в GUI
 
 ## 7. Fusion Workspace
 
-Entry point:
+Точка входа:
 
 - `services/intel_fusion.py`
 
-Fusion aggregates observations from:
+Fusion агрегирует наблюдения из:
 
-- static analysis
-- dynamic analysis
+- статического анализа
+- динамического анализа
 - threat intel
 - retro-hunt
 
-Outputs include:
+Выходы включают:
 
-- observation summaries
-- severity-aware metadata
-- MITRE heatmap input
-- D3FEND recommendations
+- сводки наблюдений
+- metadata с учётом критичности
+- данные для MITRE heatmap
+- рекомендации D3FEND
 
 ## 8. AI Adapter Layer
 
-Entry points:
+Точки входа:
 
 - `services/ai_provider.py`
 - `analyzer/ai_analyst.py`
 
-Design:
+Дизайн:
 
-- AITUNNEL is used as the single OpenAI-compatible provider adapter for non-ML AI features
-- secrets are not stored in the repository
-- fallback mode is explicit and observable
+- AITUNNEL используется как единый OpenAI-совместимый provider adapter для non-ML AI-функций
+- секреты не хранятся в репозитории
+- fallback-режим явный и наблюдаемый
 
-Capabilities:
+Возможности:
 
-- analyst description
-- threat explanation
-- YARA rule generation
+- описание угрозы для аналитика
+- объяснение угрозы
+- генерация YARA-правил
 
-## 9. API Layer
+## 9. Слой API
 
-Entry point:
+Точка входа:
 
 - `api/server.py`
 
-Stack:
+Стек:
 
 - Flask
 - CORS
 - JWT
 - rate limiting
-- OpenAPI generation
-- optional Socket.IO notifications
+- генерация OpenAPI
+- опциональные уведомления через Socket.IO
 
-Important endpoints:
+Ключевые endpoint'ы:
 
 - `POST /api/analyze`
 - `GET /api/status/<job_id>`
@@ -210,50 +210,50 @@ Important endpoints:
 - `GET /api/openapi.json`
 - `GET /api/docs`
 
-Job execution model:
+Модель выполнения job:
 
-- request is queued
-- background worker runs canonical pipeline
-- report generation is invoked with requested formats
-- `report_errors` are preserved in job state and returned to clients
+- запрос ставится в очередь
+- фоновый worker запускает канонический пайплайн
+- генерация отчётов вызывается с запрошенными форматами
+- `report_errors` сохраняются в состоянии job и возвращаются клиентам
 
-## 10. GUI Layer
+## 10. Слой GUI
 
-Entry point:
+Точка входа:
 
 - `gui/modern_gui.py`
 
-The GUI is a desktop frontend, not a web frontend.
-It consumes the same underlying analysis services used by the API and surfaces:
+GUI — это desktop frontend, а не web frontend.
+Он использует те же базовые сервисы анализа, что и API, и отображает:
 
-- static results
-- dynamic results
+- статические результаты
+- динамические результаты
 - MITRE ATT&CK
 - D3FEND
-- AITUNNEL status
-- subsystem status
+- статус AITUNNEL
+- статус подсистем
 - fusion summary
-- external retro-hunt
-- report export
+- внешний ретрохант
+- экспорт отчётов
 
-## 11. Reporting Layer
+## 11. Слой отчётности
 
-Entry points:
+Точки входа:
 
 - `reports/report_generator.py`
 - `core/reporting.py`
 
-Formats:
+Форматы:
 
 - PDF
 - HTML
 - JSON
 
-Report payload includes:
+Payload отчёта включает:
 
-- static data
-- dynamic data
-- IoCs
+- статические данные
+- динамические данные
+- IoC
 - risk
 - behavioral
 - MITRE
@@ -263,26 +263,26 @@ Report payload includes:
 - fusion
 - `report_errors`
 
-## 12. Configuration Strategy
+## 12. Стратегия конфигурации
 
-Base configuration:
+Базовая конфигурация:
 
 - `config.json`
 
-Runtime overrides:
+Runtime-переопределения:
 
 - `core/config.py`
 
-Secrets are expected through environment variables only for:
+Секреты ожидаются только через переменные окружения для:
 
-- AITUNNEL API access
-- external retro-hunt connectors
-- threat-intelligence providers
-- optional API auth
+- доступа к AITUNNEL API
+- внешних retro-hunt коннекторов
+- провайдеров threat intelligence
+- опциональной авторизации API
 
-## 13. Platform Strategy
+## 13. Платформенная стратегия
 
-- Windows: full target platform for runtime capture and snapshotting
-- Linux/macOS: degraded mode with explicit capability reporting
+- Windows: основная платформа для полного runtime-capture и snapshotting
+- Linux/macOS: degraded mode с явным репортингом возможностей
 
-This keeps the scientific and product documentation aligned with what the code actually executes outside the ML subsystem.
+Это удерживает научную и продуктовую документацию в соответствии с тем, что код реально выполняет вне ML-подсистемы.

@@ -1,70 +1,70 @@
 # Pied Piper
 
-Pied Piper is a Windows-first malware analysis platform with a unified non-ML pipeline for static analysis, runtime observation, IoC extraction, behavioral profiling, MITRE ATT&CK mapping, D3FEND recommendations, threat-intelligence enrichment, external retro-hunt, and multi-format reporting.
+Pied Piper — это Windows-first платформа для анализа вредоносных объектов с единым non-ML пайплайном: статический анализ, наблюдение за runtime-поведением, извлечение IoC, поведенческое профилирование, сопоставление с MITRE ATT&CK, рекомендации D3FEND, обогащение threat intelligence, внешний ретрохант и генерация отчётов в нескольких форматах.
 
-The ML subsystem remains in the repository, but this alignment update focuses only on the non-ML contour used by the GUI, REST API, and reporting stack.
+ML-подсистема остаётся в репозитории, но данное обновление выравнивания сосредоточено именно на non-ML контуре, который используется GUI, REST API и стеком отчётности.
 
-## Canonical Pipeline
+## Канонический Пайплайн
 
-The main analysis path is shared by the GUI and the API:
+Основной путь анализа общий для GUI и API:
 
 `static -> dynamic -> IoC -> behavioral -> MITRE -> D3FEND -> threat intel -> retro-hunt -> report`
 
-Implementation entry point:
+Точка входа реализации:
 
 - `services/analysis_pipeline.py`
 
-Key outputs:
+Ключевые выходы:
 
-- `static`: file metadata, format-specific analysis, YARA matches, YARA engine status
-- `dynamic`: Frida/runtime capabilities, API calls, timeline, system snapshot diff
-- `iocs`: extracted indicators from static and dynamic artifacts
-- `behavioral`: suspicious behavioral patterns
-- `mitre`: ATT&CK techniques
-- `d3fend`: mapped defensive controls
-- `ti_enrichment`: IOC lookups against configured TI providers
-- `retro_hunt`: external SIEM/EDR/sandbox replay results
-- `fusion`: aggregated analyst-facing summary
-- `risk`: score, adjusted score, and retro-hunt confidence boost
+- `static`: метаданные файла, форматно-зависимый анализ, совпадения YARA, статус движка YARA
+- `dynamic`: возможности Frida/runtime, вызовы API, таймлайн, дифф системных снимков
+- `iocs`: извлечённые индикаторы из статических и динамических артефактов
+- `behavioral`: подозрительные поведенческие паттерны
+- `mitre`: техники ATT&CK
+- `d3fend`: сопоставленные защитные меры
+- `ti_enrichment`: проверки IoC через настроенные TI-провайдеры
+- `retro_hunt`: результаты внешнего поиска в SIEM/EDR/sandbox
+- `fusion`: агрегированная сводка для аналитика
+- `risk`: базовая оценка, скорректированная оценка и усиление уверенности от retro-hunt
 
-## Main Components
+## Основные Компоненты
 
 - `analyzer/static_analysis.py`
-  - PE, ELF, PDF, OOXML (`docx`, `docm`), OLE, and script inspection
-  - OOXML package inspection for `vbaProject.bin`, embedded OLE, external `.rels`, and suspicious template/link relations
-  - YARA loading status is always included in results
+  - анализ PE, ELF, PDF, OOXML (`docx`, `docm`), OLE и скриптов
+  - инспекция OOXML-пакета на наличие `vbaProject.bin`, embedded OLE, внешних `.rels` и подозрительных шаблонов/связей
+  - статус загрузки YARA всегда включается в результат
 
 - `analyzer/dynamic_analysis.py`
-  - Frida-based runtime analysis with an expanded hook catalog (`50+` APIs)
-  - Windows differential snapshots for processes, filesystem, and registry when available
-  - explicit degraded mode when Frida is unavailable
+  - runtime-анализ на базе Frida с расширенным каталогом хуков (`50+` API)
+  - дифференциальные снимки процессов, файловой системы и реестра на Windows, когда это возможно
+  - явный degraded mode, если Frida недоступна
 
 - `services/retro_hunt.py`
-  - connector orchestration for SIEM, EDR, and sandbox backends
-  - partial-failure tolerant aggregation
+  - оркестрация коннекторов SIEM, EDR и sandbox
+  - агрегация, устойчивая к частичным сбоям
 
 - `services/intel_fusion.py`
-  - MITRE/D3FEND fusion workspace and defensive recommendations
+  - workspace для MITRE/D3FEND fusion и выдачи защитных рекомендаций
 
 - `analyzer/ai_analyst.py`
-  - AITUNNEL-backed analyst workflows for explanation and YARA generation
-  - explicit fallback mode when `AITUNNEL_API_KEY` is not configured
+  - сценарии для аналитика через AITUNNEL: объяснение угрозы и генерация YARA
+  - явный fallback-режим, если `AITUNNEL_API_KEY` не настроен
 
 - `api/server.py`
   - Flask API
-  - Swagger/OpenAPI at `/api/openapi.json`
-  - Swagger UI at `/api/docs`
+  - Swagger/OpenAPI по адресу `/api/openapi.json`
+  - Swagger UI по адресу `/api/docs`
 
 - `gui/modern_gui.py`
-  - desktop GUI with tabs for analysis, MITRE, D3FEND, subsystem status, and retro-hunt/fusion
+  - desktop GUI со вкладками анализа, MITRE, D3FEND, статуса подсистем и ретроханта/fusion
 
 - `reports/report_generator.py`
-  - PDF, HTML, and JSON report generation from the unified result payload
+  - генерация PDF, HTML и JSON-отчётов из унифицированного result payload
 
-## Configuration
+## Конфигурация
 
-Non-secret defaults live in `config.json`.
-Secrets and operational tokens should be supplied via environment variables.
+Несекретные значения по умолчанию хранятся в `config.json`.
+Секреты и операционные токены рекомендуется передавать через переменные окружения.
 
 ### AITUNNEL
 
@@ -76,15 +76,15 @@ Secrets and operational tokens should be supplied via environment variables.
 - `AITUNNEL_TEMPERATURE`
 - `AITUNNEL_VERIFY_SSL`
 
-Default base URL:
+Базовый URL по умолчанию:
 
 - `https://api.aitunnel.ru/v1/`
 
-Default model:
+Модель по умолчанию:
 
 - `gemini-3-flash-preview`
 
-### External Retro-Hunt
+### Внешний Retro-Hunt
 
 - `RETRO_HUNT_SIEM_ENDPOINT`
 - `RETRO_HUNT_SIEM_TOKEN`
@@ -104,21 +104,21 @@ Default model:
 
 ## YARA
 
-The repository now includes example rules in:
+В репозиторий включены примерные правила:
 
 - `yara_rules/generic_suspicious_strings.yar`
 - `yara_rules/office_ooxml_macro.yar`
 
-If the YARA engine is unavailable or the rules directory is empty, the platform reports the degraded state explicitly through:
+Если движок YARA недоступен или каталог правил пуст, платформа явно сообщает degraded state через:
 
-- static-analysis results
-- API payloads
-- GUI status panes
-- generated reports
+- результаты статического анализа
+- payload API
+- панели статуса в GUI
+- сгенерированные отчёты
 
-## API Surface
+## Поверхность API
 
-Core endpoints:
+Основные endpoint'ы:
 
 - `POST /api/analyze`
 - `GET /api/status/<job_id>`
@@ -129,29 +129,29 @@ Core endpoints:
 - `GET /api/openapi.json`
 - `GET /api/docs`
 
-## GUI Surface
+## Поверхность GUI
 
-The desktop application exposes:
+Desktop-приложение предоставляет:
 
-- static analysis
-- dynamic analysis
-- AI-assisted description and YARA generation
-- MITRE ATT&CK plus D3FEND
-- subsystem health for Frida, YARA, threat intel, retro-hunt, and AITUNNEL
-- fusion and external retro-hunt workflow
-- report export
+- статический анализ
+- динамический анализ
+- AI-описание угрозы и генерацию YARA
+- MITRE ATT&CK вместе с D3FEND
+- статус подсистем Frida, YARA, threat intel, retro-hunt и AITUNNEL
+- workflow fusion и внешнего ретроханта
+- экспорт отчётов
 
-## Verification
+## Проверка
 
-Recommended local checks:
+Рекомендуемые локальные проверки:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe main.py gui --diagnose
 ```
 
-## Notes
+## Примечания
 
-- Windows is the primary target for full runtime coverage.
-- Linux/macOS are supported in degraded mode where Windows-specific runtime capture is unavailable.
-- This non-ML alignment work does not change the training code, metrics, datasets, or scientific claims for the ML subsystem.
+- Windows — основная целевая платформа для полного runtime-покрытия.
+- Linux/macOS поддерживаются в degraded mode там, где недоступен Windows-специфичный runtime capture.
+- Это обновление non-ML части не меняет код обучения, метрики, датасеты и научные утверждения для ML-подсистемы.

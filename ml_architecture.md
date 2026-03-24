@@ -1,155 +1,155 @@
-# Pied Piper ML Architecture
+# ML-архитектура Pied Piper
 
-## Overview
+## Обзор
 
-Pied Piper uses a hybrid ML architecture with two complementary layers:
+Pied Piper использует гибридную ML-архитектуру с двумя взаимодополняющими слоями:
 
 1. `Supervised classification`
-   - Implemented in `analyzer/ml_detector.py` and `scripts/train_model.py`
-   - Builds a fixed-length feature vector (`100` features)
-   - Trains a `LogisticRegression` classifier with `StandardScaler`
-   - Produces `ml_probability`, which is injected into the risk scoring pipeline
+   - реализована в `analyzer/ml_detector.py` и `scripts/train_model.py`
+   - строит вектор фиксированной длины (`100` признаков)
+   - обучает классификатор `LogisticRegression` вместе с `StandardScaler`
+   - выдаёт `ml_probability`, которая затем включается в пайплайн оценки риска
 
 2. `Unsupervised similarity analysis`
-   - Implemented in `analyzer/clustering.py`
-   - Uses `DBSCAN` for behaviour-based grouping
-   - Projects each sample into a 2D behavioural plane
-   - Assigns every sample to a behavioural quadrant
-   - Uses `Manhattan distance` in scaled feature space to find nearest neighbours
-   - Can persist indexed profiles into SQLite via `services/ml_profile_store.py`
+   - реализована в `analyzer/clustering.py`
+   - использует `DBSCAN` для группировки по поведению
+   - проецирует каждый образец в двумерную поведенческую плоскость
+   - относит каждый образец к одному из поведенческих квадрантов
+   - использует `Manhattan distance` в масштабированном пространстве признаков для поиска ближайших соседей
+   - может сохранять индексированные профили в SQLite через `services/ml_profile_store.py`
 
-## Supervised Layer
+## Supervised-слой
 
-### Input
+### Вход
 
-The classifier consumes features extracted from:
+Классификатор использует признаки, извлечённые из:
 
-- static analysis
-- dynamic analysis
-- IoCs
+- статического анализа
+- динамического анализа
+- IoC
 
-### Feature groups
+### Группы признаков
 
-The vector includes:
+Вектор включает:
 
-- file size
-- entropy indicators
-- suspicious imports
-- API-call categories
-- IoC density
+- размер файла
+- индикаторы энтропии
+- подозрительные импорты
+- категории вызовов API
+- плотность IoC
 
-### Training
+### Обучение
 
-Training entrypoint:
+Точка входа для обучения:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\train_model.py --samples 1000
 ```
 
-Training behaviour:
+Поведение обучения:
 
-- if a labelled dataset exists, it is used
-- if labelled data is insufficient, synthetic top-up is added
-- if no dataset exists, the model is trained on a synthetic dataset
+- если есть размеченный датасет, используется он
+- если размеченных данных недостаточно, добавляется синтетическое дополнение
+- если датасета нет, модель обучается на синтетическом наборе
 
-### Output
+### Выход
 
-Artifacts:
+Артефакты:
 
 - `models/malware_model.pkl`
 - `models/malware_model_metrics.json`
 
-The resulting probability is fed into:
+Полученная вероятность затем используется в:
 
 - `analyzer/scoring.py`
-- GUI risk display
-- report generation
+- отображении риска в GUI
+- генерации отчётов
 
-## Unsupervised Layer
+## Unsupervised-слой
 
-### Why it exists
+### Зачем он нужен
 
-This layer is used when we want to compare malware behaviour without requiring trusted labels.
+Этот слой используется, когда нужно сравнивать вредоносные объекты по поведению без обязательного наличия доверенных меток.
 
-That means:
+Это означает:
 
-- the algorithm does not need to know the malware family in advance
-- it works on behavioural similarity
-- it can be used for grouping, nearest-neighbour search and family approximation
+- алгоритму не нужно заранее знать семейство malware
+- он работает по поведенческому сходству
+- он может использоваться для группировки, поиска ближайших соседей и приблизительной атрибуции семейства
 
-### Behavioural plane
+### Поведенческая плоскость
 
-Each sample is projected into a 2D plane:
+Каждый образец проецируется в двумерную плоскость:
 
-- `X-axis`: execution risk and maliciousness
-  - suspicious API ratio
+- `ось X`: риск выполнения и вредоносность
+  - доля подозрительных API
   - supervised ML probability
-  - risk score
-- `Y-axis`: propagation and external activity
-  - network activity
-  - IoC density
-  - behavioural pattern count
-  - API-call volume
-  - entropy contribution
+  - риск-оценка
+- `ось Y`: распространение и внешняя активность
+  - сетевая активность
+  - плотность IoC
+  - число поведенческих паттернов
+  - объём API-вызовов
+  - вклад энтропии
 
-The dataset median becomes the origin of the plane.
+Медиана датасета становится началом координат этой плоскости.
 
-### Quadrants
+### Квадранты
 
-After centering around the median origin, each sample is assigned to one of four quadrants:
+После центрирования относительно медианного происхождения каждый образец относится к одному из четырёх квадрантов:
 
 - `Q1`: Execution & Propagation
 - `Q2`: Propagation-Dominant
 - `Q3`: Dormant / Low-Activity
 - `Q4`: Execution-Dominant
 
-This gives an interpretable behavioural segmentation for presentation and analyst triage.
+Это даёт интерпретируемую поведенческую сегментацию для презентации и аналитического triage.
 
 ### Manhattan distance
 
-Nearest-neighbour search uses `Manhattan distance` over the scaled behavioural feature vector.
+Поиск ближайших соседей использует `Manhattan distance` по масштабированному поведенческому вектору признаков.
 
-Why Manhattan distance is useful here:
+Почему Manhattan distance полезно здесь:
 
-- robust for sparse behavioural vectors
-- interpretable as total absolute deviation between malware profiles
-- works well when features represent counts, presences and discrete behavioural indicators
+- устойчиво для разреженных поведенческих векторов
+- интерпретируется как суммарное абсолютное отклонение между профилями malware
+- хорошо работает, когда признаки описывают счётчики, наличие признаков и дискретные поведенческие индикаторы
 
-In the project it is used for:
+В проекте она используется для:
 
-- nearest sample lookup
-- family profile comparison
-- similarity search in the SQLite profile store
+- поиска ближайших образцов
+- сравнения профилей семейств
+- similarity search в SQLite-хранилище профилей
 
-## Profile Store
+## Хранилище профилей
 
-Persistent storage is implemented in:
+Постоянное хранение реализовано в:
 
 - `services/ml_profile_store.py`
 
-Storage backend:
+База хранения:
 
 - `SQLite`
 
-Default path:
+Путь по умолчанию:
 
 - `./data/ml_profiles.db`
 
-Each stored profile contains:
+Каждый сохранённый профиль содержит:
 
-- sample id
-- family label if available
-- cluster label
-- quadrant
-- 2D behavioural coordinates
-- scaled feature vector
-- risk and ML metadata
+- идентификатор образца
+- метку семейства, если она есть
+- метку кластера
+- квадрант
+- двумерные поведенческие координаты
+- масштабированный вектор признаков
+- risk- и ML-метаданные
 
-This allows the system to accumulate a local behavioural knowledge base.
+Это позволяет системе накапливать локальную базу знаний о поведенческих профилях.
 
-## API Support
+## Поддержка в API
 
-ML-specific API endpoints:
+ML-специфичные endpoint'ы API:
 
 - `POST /api/ml/train`
 - `POST /api/ml/similarity`
@@ -158,8 +158,8 @@ Swagger:
 
 - `http://127.0.0.1:8080/api/docs`
 
-## Presentation-ready statement
+## Формулировка для презентации
 
-You can describe the ML subsystem like this:
+ML-подсистему можно описывать так:
 
-> Pied Piper uses a hybrid ML architecture. The supervised layer estimates the probability of maliciousness from static, dynamic and IoC features. The unsupervised layer clusters behavioural profiles, projects them onto a 2D quadrant model and compares samples using Manhattan distance. This allows both probability-based scoring and label-independent malware similarity analysis.
+> Pied Piper использует гибридную ML-архитектуру. Supervised-слой оценивает вероятность вредоносности на основе статических, динамических и IoC-признаков. Unsupervised-слой кластеризует поведенческие профили, проецирует их в двумерную квадрантную модель и сравнивает образцы через Manhattan distance. Это позволяет одновременно использовать вероятностную оценку и независимый от меток анализ сходства вредоносных объектов.
