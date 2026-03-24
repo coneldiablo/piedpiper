@@ -1,0 +1,79 @@
+{
+  "VIRUSTOTAL_API_KEY": "",
+  "OTX_API_KEY": "",
+  "ABUSEIPDB_KEY": "",
+  "ABUSECH_AUTH_KEY": "",
+  "THREATFOX_API_KEY": "",
+  "URLHAUS_API_KEY": "",
+  "GREYNOISE_API_KEY": "",
+  "AITUNNEL_API_KEY": "",
+  "AITUNNEL_BASE_URL": "https://api.aitunnel.ru/v1/",
+  "AITUNNEL_MODEL": "gemini-3-flash-preview",
+  "AITUNNEL_TIMEOUT": 45,
+  "AITUNNEL_MAX_RETRIES": 2,
+  "MALWAREBAZAAR_API_KEY": "",
+  "VIRUSSHARE_API_KEY": "",
+  "ML_MODEL_PATH": null,
+  "ML_PROFILE_STORE_PATH": "./data/ml_profiles.db",
+  "MITRE_INDICATOR_HINTS_PATH": null,
+  "INDICATOR_HINTS_PATH": "./data/indicator_hints.json",
+  "DATASET_WORK_DIR": "./dataset_work",
+  "REPORT_OUTPUT_DIR": "./reports",
+  "RETRO_HUNT": {
+    "siem": {
+      "endpoint": "",
+      "timeout": 20,
+      "verify_ssl": true,
+      "enabled": false
+    },
+    "edr": {
+      "endpoint": "",
+      "timeout": 20,
+      "verify_ssl": true,
+      "enabled": false
+    },
+    "sandbox": {
+      "endpoint": "",
+      "timeout": 60,
+      "verify_ssl": true,
+      "enabled": false
+    }
+  },
+  "API_AUTH_USERS": {},
+  "API_AUTH_USERNAME": null,
+  "API_AUTH_PASSWORD": null,
+  "API_STATIC_TOKENS": [],
+  "API_CORS_ORIGINS": [
+    "*"
+  ],
+  "API_JWT_SECRET": "change_me",
+  "API_JWT_EXPIRES_MINUTES": 30,
+  "API_RATE_LIMIT_ANALYZE": "5 per minute",
+  "API_RATE_LIMIT_STATUS": "30 per minute",
+  "API_RATE_LIMIT_REPORT": "20 per minute",
+  "API_RATE_LIMIT_AUTH": "10 per hour",
+  "API_RATE_LIMIT_PING": "120 per minute",
+  "API_RATE_LIMIT_CLUSTER": "3 per minute",
+  "API_RATE_LIMIT_HUNT": "10 per minute",
+  "API_RATE_LIMIT_YARA": "5 per minute",
+  "API_RATE_LIMIT_ML_TRAIN": "2 per hour",
+  "API_RATE_LIMIT_ML_SIMILARITY": "10 per minute",
+  "MONITORING": {
+    "paths": [
+      "./samples"
+    ],
+    "include_extensions": [
+      ".exe",
+      ".dll",
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".elf"
+    ],
+    "exclude_paths": [],
+    "recursive": true,
+    "baseline_with_hashes": true,
+    "max_events": 500,
+    "throttle_per_minute": 60
+  }
+}

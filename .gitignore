@@ -1,0 +1,51 @@
+# Virtual environments
+.venv/
+.venv312/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Local configuration and secrets
+config.json
+.env
+.env.*
+
+# Logs and traces
+*.log
+gui_run.log
+gui_startup.log
+import_log.txt
+instantiate.log
+launch_trace.log
+
+# Generated reports and scan outputs
+reports/*.pdf
+reports/*.html
+reports/*.json
+reports/__pycache__/
+scan_output.json
+static_output.json
+monitor_summary.json
+
+# Local caches and databases
+data/mitre_cache/
+data/ml_profiles.db
+
+# Runtime artifacts
+memory_dumps_*/
+
+# Temporary and scratch files
+temp_patch.diff
+tmp_*.py
+main_copy_snapshot.py
+main_utf8.txt
+analyzer/test.txt
+models/versions/
+
+# IDE / OS noise
+.DS_Store
+Thumbs.db

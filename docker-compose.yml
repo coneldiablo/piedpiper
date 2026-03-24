@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    container_name: threatinquisitor_api
+    ports:
+      - "${TI_API_PORT:-8080}:8080"
+    environment:
+      - TI_API_HOST=0.0.0.0
+      - TI_API_PORT=8080
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./reports:/opt/threatinquisitor/reports
+      - ./dataset_work:/opt/threatinquisitor/dataset_work
+      - ./memory_dumps:/opt/threatinquisitor/memory_dumps
+    restart: unless-stopped

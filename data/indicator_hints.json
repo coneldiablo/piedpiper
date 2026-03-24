@@ -1,0 +1,175 @@
+{
+  "T1059.001": {
+    "indicators": [
+      "powershell.exe",
+      "Invoke-Expression",
+      "DownloadString"
+    ]
+  },
+  "T1059.003": {
+    "indicators": [
+      "cmd.exe",
+      "cmd /c",
+      "cmd /k"
+    ]
+  },
+  "T1106": {
+    "indicators": [
+      "CreateProcess",
+      "CreateRemoteThread",
+      "NtCreateThread"
+    ]
+  },
+  "T1547.001": {
+    "indicators": [
+      "CurrentVersion\\Run",
+      "CurrentVersion\\RunOnce",
+      "RegCreateKey"
+    ]
+  },
+  "T1053.005": {
+    "indicators": [
+      "schtasks",
+      "Task Scheduler",
+      "at.exe"
+    ]
+  },
+  "T1543.003": {
+    "indicators": [
+      "CreateService",
+      "sc.exe create",
+      "OpenSCManager"
+    ]
+  },
+  "T1055": {
+    "indicators": [
+      "CreateRemoteThread",
+      "WriteProcessMemory",
+      "VirtualAllocEx",
+      "SetThreadContext"
+    ]
+  },
+  "T1070.004": {
+    "indicators": [
+      "DeleteFile",
+      "del /f",
+      "Remove-Item"
+    ]
+  },
+  "T1140": {
+    "indicators": [
+      "base64",
+      "FromBase64String",
+      "certutil -decode"
+    ]
+  },
+  "T1003.001": {
+    "indicators": [
+      "lsass.exe",
+      "mimikatz",
+      "ProcDump",
+      "MiniDumpWriteDump"
+    ]
+  },
+  "T1555": {
+    "indicators": [
+      "Credential Manager",
+      "Windows Vault",
+      "logins.json"
+    ]
+  },
+  "T1082": {
+    "indicators": [
+      "systeminfo",
+      "GetSystemInfo",
+      "ver",
+      "wmic computersystem"
+    ]
+  },
+  "T1083": {
+    "indicators": [
+      "dir",
+      "FindFirst",
+      "FindNext",
+      "tree"
+    ]
+  },
+  "T1057": {
+    "indicators": [
+      "tasklist",
+      "Get-Process",
+      "EnumProcesses",
+      "ps"
+    ]
+  },
+  "T1005": {
+    "indicators": [
+      "ReadFile",
+      "CopyFile",
+      "xcopy",
+      "robocopy"
+    ]
+  },
+  "T1113": {
+    "indicators": [
+      "BitBlt",
+      "GetDC",
+      "screenshot",
+      "ScreenShot"
+    ]
+  },
+  "T1115": {
+    "indicators": [
+      "GetClipboardData",
+      "SetClipboardData",
+      "OpenClipboard"
+    ]
+  },
+  "T1071.001": {
+    "indicators": [
+      "http://",
+      "https://",
+      "HttpSendRequest",
+      "WinHttpOpen"
+    ]
+  },
+  "T1573": {
+    "indicators": [
+      "SSL",
+      "TLS",
+      "WinHttpSetOption"
+    ]
+  },
+  "T1095": {
+    "indicators": [
+      "socket",
+      "WSASocket",
+      "bind",
+      "listen"
+    ]
+  },
+  "T1041": {
+    "indicators": [
+      "POST",
+      "PUT",
+      "send",
+      "transmit"
+    ]
+  },
+  "T1486": {
+    "indicators": [
+      "CryptEncrypt",
+      "encrypt",
+      ".encrypted",
+      ".locked",
+      "ransom"
+    ]
+  },
+  "T1490": {
+    "indicators": [
+      "vssadmin delete",
+      "bcdedit",
+      "wbadmin delete"
+    ]
+  }
+}
