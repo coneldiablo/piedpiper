@@ -44,6 +44,13 @@ class DummyClustering:
     def persist_similarity_profiles(self, store_path=None):
         return 2
 
+    def get_persistence_status(self):
+        return {
+            "profiles": 2,
+            "sqlite": {"enabled": True, "stored": 2, "path": "./data/ml_profiles.db"},
+            "qdrant": {"enabled": False, "configured": False, "stored": 0},
+        }
+
     def get_scaled_feature_vector(self, sample):
         return [0.1, 0.2, 0.3]
 
@@ -174,6 +181,7 @@ def test_ml_similarity_endpoint(app):
     assert data["family_match"]["family"] == "DemoFamily"
     assert data["persisted_profiles"] == 2
     assert data["store_neighbors"][0]["sample_id"] == "persisted-1"
+    assert data["vector_store"]["backend"] == "sqlite"
 
 
 def test_analyze_requires_auth_and_rate_limit(secured_app):

@@ -12,6 +12,8 @@ results produced by ThreatInquisitor.
 
 from __future__ import annotations
 
+import copy
+import logging
 import math
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -30,6 +32,9 @@ except Exception as exc:  # pragma: no cover - optional dependency
     SKLEARN_IMPORT_ERROR = exc
 else:
     SKLEARN_IMPORT_ERROR = None
+
+
+logger = logging.getLogger("analyzer.clustering")
 
 
 SUSPICIOUS_APIS = {
@@ -77,6 +82,11 @@ class MalwareClustering:
         self._feature_matrix: Optional[np.ndarray] = None
         self._quadrant_origin: Dict[str, float] = {"x": 0.0, "y": 0.0}
         self._family_quadrant_origin: Dict[str, float] = {"x": 0.0, "y": 0.0}
+        self._last_persistence_status: Dict[str, Any] = {
+            "profiles": 0,
+            "sqlite": {"enabled": True, "stored": 0},
+            "qdrant": {"enabled": False, "configured": False, "stored": 0},
+        }
 
         self.api_vectorizer: Optional[TfidfVectorizer] = None
         self.ioc_binarizer: Optional[MultiLabelBinarizer] = None
@@ -417,14 +427,51 @@ class MalwareClustering:
         return exported
 
     def persist_similarity_profiles(self, store_path: Optional[str] = None) -> int:
-        """Persist exported similarity profiles into the SQLite profile store."""
+        """Persist exported similarity profiles into SQLite and optionally Qdrant."""
         from services.ml_profile_store import MLProfileStore
+        from services.qdrant_profile_store import QdrantProfileStore
 
         profiles = self.export_similarity_profiles()
+        self._last_persistence_status = {
+            "profiles": len(profiles),
+            "sqlite": {"enabled": True, "stored": 0},
+            "qdrant": {"enabled": False, "configured": False, "stored": 0},
+        }
         if not profiles:
             return 0
-        store = MLProfileStore(db_path=store_path)
-        return store.upsert_profiles(profiles)
+
+        stored_counts: List[int] = []
+
+        sqlite_store = MLProfileStore(db_path=store_path)
+        self._last_persistence_status["sqlite"]["path"] = str(sqlite_store.db_path)
+        try:
+            sqlite_count = sqlite_store.upsert_profiles(profiles)
+            self._last_persistence_status["sqlite"]["stored"] = sqlite_count
+            stored_counts.append(sqlite_count)
+        except Exception as exc:
+            self._last_persistence_status["sqlite"]["error"] = str(exc)
+            logger.warning("SQLite ML profile persistence failed: %s", exc)
+
+        qdrant_store = QdrantProfileStore()
+        self._last_persistence_status["qdrant"].update(qdrant_store.describe())
+        if qdrant_store.is_configured():
+            try:
+                qdrant_count = qdrant_store.upsert_profiles(profiles)
+                self._last_persistence_status["qdrant"]["stored"] = qdrant_count
+                stored_counts.append(qdrant_count)
+            except Exception as exc:
+                self._last_persistence_status["qdrant"]["error"] = str(exc)
+                logger.warning("Qdrant ML profile persistence failed: %s", exc)
+        else:
+            self._last_persistence_status["qdrant"]["reason"] = "disabled_or_unconfigured"
+
+        if not stored_counts:
+            raise RuntimeError("Failed to persist ML profiles to both SQLite and Qdrant backends")
+        return max(stored_counts)
+
+    def get_persistence_status(self) -> Dict[str, Any]:
+        """Return backend persistence status for the latest export."""
+        return copy.deepcopy(self._last_persistence_status)
 
     def _prepare_dataset(
         self,

@@ -54,6 +54,13 @@ class ConfigManager:
         "THREATFOX_API_KEY": ("THREATFOX_API_KEY", str),
         "URLHAUS_API_KEY": ("URLHAUS_API_KEY", str),
         "MALWAREBAZAAR_API_KEY": ("MALWAREBAZAAR_API_KEY", str),
+        "QDRANT_ENABLED": ("QDRANT_ENABLED", bool),
+        "QDRANT_ENDPOINT": ("QDRANT_ENDPOINT", str),
+        "QDRANT_API_KEY": ("QDRANT_API_KEY", str),
+        "QDRANT_COLLECTION": ("QDRANT_COLLECTION", str),
+        "QDRANT_TIMEOUT": ("QDRANT_TIMEOUT", int),
+        "QDRANT_VERIFY_SSL": ("QDRANT_VERIFY_SSL", bool),
+        "QDRANT_DISTANCE": ("QDRANT_DISTANCE", str),
     }
 
     _NESTED_ENV_OVERRIDES = {
@@ -110,6 +117,12 @@ class ConfigManager:
         self.settings.setdefault("AITUNNEL_MAX_RETRIES", 2)
         self.settings.setdefault("AITUNNEL_TEMPERATURE", 0.2)
         self.settings.setdefault("AITUNNEL_VERIFY_SSL", True)
+        self.settings.setdefault("QDRANT_ENABLED", False)
+        self.settings.setdefault("QDRANT_ENDPOINT", "http://127.0.0.1:6333")
+        self.settings.setdefault("QDRANT_COLLECTION", "pied_piper_ml_profiles")
+        self.settings.setdefault("QDRANT_TIMEOUT", 15)
+        self.settings.setdefault("QDRANT_VERIFY_SSL", True)
+        self.settings.setdefault("QDRANT_DISTANCE", "Manhattan")
 
         retro_hunt = self.settings.setdefault("RETRO_HUNT", {})
         if not isinstance(retro_hunt, dict):

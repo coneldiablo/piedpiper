@@ -1738,17 +1738,38 @@ class ModernThreatInquisitorGUI(QMainWindow):
             return
         try:
             stored = self.clustering_clusterer.persist_similarity_profiles()
-            store_path = config_manager.get("ML_PROFILE_STORE_PATH", "./data/ml_profiles.db")
+            persistence_status = self.clustering_clusterer.get_persistence_status()
         except Exception as exc:
             QMessageBox.critical(self, "Ошибка сохранения", str(exc))
             logger.exception("Failed to persist ML profiles: %s", exc)
             return
+
+        sqlite_status = persistence_status.get("sqlite", {})
+        qdrant_status = persistence_status.get("qdrant", {})
+        message_lines = [
+            f"Сохранено {stored} ML-профилей",
+            f"SQLite: {sqlite_status.get('stored', 0)} | {sqlite_status.get('path', '-')}",
+        ]
+        if qdrant_status.get("configured"):
+            qdrant_line = (
+                f"Qdrant: {qdrant_status.get('stored', 0)} | "
+                f"{qdrant_status.get('endpoint', '-')}/{qdrant_status.get('collection', '-')}"
+            )
+            if qdrant_status.get("error"):
+                qdrant_line += f" | ошибка: {qdrant_status.get('error')}"
+            message_lines.append(qdrant_line)
+        else:
+            message_lines.append("Qdrant: отключён или не настроен")
+
         QMessageBox.information(
             self,
             "Профили сохранены",
-            f"Сохранено {stored} ML-профилей в {store_path}",
+            "\n".join(message_lines),
         )
-        self.statusBar().showMessage(f"Сохранено {stored} ML-профилей")
+        if qdrant_status.get("configured") and not qdrant_status.get("error"):
+            self.statusBar().showMessage(f"Сохранено {stored} ML-профилей в SQLite и Qdrant")
+        else:
+            self.statusBar().showMessage(f"Сохранено {stored} ML-профилей в SQLite")
 
     def load_family_dataset(self):
         file_path, _ = QFileDialog.getOpenFileName(

@@ -47,6 +47,7 @@ from reports.report_generator import generate_report
 from api.collaboration import register_collaboration_handlers
 from services.analysis_pipeline import run_canonical_pipeline
 from services.ml_profile_store import MLProfileStore
+from services.qdrant_profile_store import QdrantProfileStore
 from services.retro_hunt import RetroHuntOrchestrator
 from scripts.train_model import train_model
 
@@ -1107,12 +1108,33 @@ def create_app() -> Flask:
 
             persisted_profiles = 0
             store_neighbors: List[Dict[str, Any]] = []
+            vector_store = {
+                "backend": "not_persisted",
+                "status": {
+                    "profiles": 0,
+                    "sqlite": {"enabled": True, "stored": 0},
+                    "qdrant": {"enabled": False, "configured": False, "stored": 0},
+                },
+            }
             if persist_store:
                 persisted_profiles = clusterer.persist_similarity_profiles(store_path)
+                vector_store["status"] = clusterer.get_persistence_status()
                 scaled_vector = clusterer.get_scaled_feature_vector(sample)
                 if scaled_vector:
-                    store = MLProfileStore(db_path=store_path)
-                    store_neighbors = store.find_neighbors(scaled_vector, top_k=top_k)
+                    qdrant_store = QdrantProfileStore()
+                    if qdrant_store.is_configured():
+                        try:
+                            store_neighbors = qdrant_store.find_neighbors(scaled_vector, top_k=top_k)
+                            if store_neighbors:
+                                vector_store["backend"] = "qdrant"
+                        except Exception as exc:
+                            logger.warning("Qdrant similarity lookup failed, falling back to SQLite: %s", exc)
+                            vector_store["status"].setdefault("qdrant", {})["search_error"] = str(exc)
+
+                    if not store_neighbors:
+                        store = MLProfileStore(db_path=store_path)
+                        store_neighbors = store.find_neighbors(scaled_vector, top_k=top_k)
+                        vector_store["backend"] = "sqlite"
 
             response_payload = {
                 "sample_projection": sample_projection,
@@ -1124,6 +1146,7 @@ def create_app() -> Flask:
                 "family_match": family_match,
                 "persisted_profiles": persisted_profiles,
                 "store_neighbors": store_neighbors,
+                "vector_store": vector_store,
             }
         except RuntimeError as exc:
             return jsonify({"error": str(exc)}), 503
